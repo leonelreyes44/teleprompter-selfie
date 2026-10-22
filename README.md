@@ -6,9 +6,10 @@ App web de un solo archivo (`index.html`, sin librerías) para grabar video desd
 
 1. Abre la página por HTTPS en Safari y pulsa **Activar cámara** (acepta cámara y micrófono).
 2. Escribe o pega tu guion en el cuadro. Arrástralo desde la barra superior del cuadro para moverlo.
-3. Botón **⚙︎**: opacidad del fondo (0–100 %), tamaño de letra (16–48 px), velocidad de desplazamiento y cámara **Selfie / Normal**.
-4. **⇋** voltea la vista previa (solo la vista previa; el video sale sin voltear). **▶︎** inicia/pausa el desplazamiento. **Aa** muestra/oculta el texto sin detener la grabación.
-5. Botón rojo: grabar / detener. Al detener puedes **Descargar** o **Grabar de nuevo**.
+3. Botón **⚙︎**: panel de ajustes (también se arrastra y tiene su propia opacidad): opacidad del panel y del texto (0–100 %), tamaño de letra (16–48 px), velocidad de desplazamiento, cámara **Selfie / Normal** y **Video grabado en espejo** (sí/no). Muestra además la duración estimada del desplazamiento.
+4. Cambia el tamaño del cuadro de texto con el tirador de su esquina inferior derecha.
+5. **⇋** voltea solo la vista previa. **▶︎** inicia/pausa el desplazamiento (si mueves el texto con el dedo, continúa desde donde lo sueltes). **Aa** muestra/oculta el texto sin detener la grabación. El chip **⏱** del cuadro indica el tiempo restante estimado.
+6. Botón rojo: grabar / detener. Al detener puedes **Descargar** o **Grabar de nuevo**.
 
 Texto y ajustes se guardan en `localStorage` (si no está disponible, la app sigue funcionando).
 

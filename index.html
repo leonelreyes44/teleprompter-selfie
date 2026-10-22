@@ -60,22 +60,29 @@
   #estadoRec .punto { width: 12px; height: 12px; border-radius: 50%; background: #ff2b2b; animation: parpadeo 1s infinite; }
   @keyframes parpadeo { 50% { opacity: .25; } }
 
+  /* ===== Asa de arrastre (compartida por el cuadro y el panel de ajustes) ===== */
+  .asa {
+    flex: 0 0 auto; height: 36px; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45); touch-action: none; cursor: grab; color: #ddd; font-size: 13px;
+    user-select: none; -webkit-user-select: none; position: relative;
+  }
+  .asa::before { content: ""; width: 44px; height: 5px; border-radius: 3px; background: #aaa; margin-right: 8px; }
+
   /* ===== Cuadro del teleprompter (solo DOM, nunca entra en la grabación) ===== */
   #caja {
     position: absolute; z-index: 10; left: 12px; top: calc(60px + env(safe-area-inset-top));
-    width: calc(100% - 24px); max-width: 520px; height: 36vh; min-height: 140px;
+    width: calc(100% - 24px); height: 36vh; min-width: 180px; min-height: 100px;
     display: flex; flex-direction: column;
     border-radius: 14px; overflow: hidden;
     /* el fondo usa --op; el texto nunca hereda la transparencia */
     background: rgba(0,0,0,var(--op, .6));
     border: 1px solid rgba(255,255,255,.18);
   }
-  #asa {
-    flex: 0 0 auto; height: 32px; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,.45); touch-action: none; cursor: grab; color: #ddd; font-size: 13px;
-    user-select: none; -webkit-user-select: none;
+  #estimado {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; font-variant-numeric: tabular-nums; color: #fff;
+    background: rgba(0,0,0,.5); border-radius: 10px; padding: 3px 8px;
   }
-  #asa::before { content: ""; width: 44px; height: 5px; border-radius: 3px; background: #aaa; margin-right: 8px; }
   #texto {
     flex: 1 1 auto; width: 100%; resize: none; border: 0; outline: 0; margin: 0;
     background: transparent; color: #fff; padding: 10px 14px;
@@ -83,8 +90,18 @@
     text-shadow: 0 0 3px #000, 0 1px 4px #000, 0 0 8px rgba(0,0,0,.8); /* legible con fondo 0 % */
     -webkit-user-select: text; user-select: text;
   }
+  /* Tirador de la esquina inferior derecha para cambiar el tamaño */
+  #redim {
+    position: absolute; right: 0; bottom: 0; width: 44px; height: 44px;
+    touch-action: none; cursor: nwse-resize;
+  }
+  #redim::after {
+    content: ""; position: absolute; right: 6px; bottom: 6px; width: 16px; height: 16px;
+    border-right: 4px solid #fff; border-bottom: 4px solid #fff; border-radius: 0 0 6px 0;
+    filter: drop-shadow(0 0 3px #000); opacity: .85;
+  }
 
-  /* ===== Barra inferior y ajustes ===== */
+  /* ===== Barra inferior ===== */
   #barra {
     position: absolute; z-index: 20; left: 0; right: 0; bottom: 0;
     display: flex; align-items: center; justify-content: space-between; gap: 6px;
@@ -100,16 +117,22 @@
     transition: all .15s;
   }
   #btnRec.grabando::after { inset: 18px; border-radius: 8px; }
+
+  /* ===== Panel de ajustes (movible y con opacidad propia) ===== */
   #ajustes {
-    position: absolute; z-index: 20; left: 12px; right: 12px;
-    bottom: calc(104px + env(safe-area-inset-bottom));
-    background: rgba(20,20,24,.92); border: 1px solid rgba(255,255,255,.18);
-    border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+    position: absolute; z-index: 20; left: 12px; top: 120px;
+    width: min(360px, calc(100% - 24px)); max-height: calc(100% - 130px);
+    display: flex; flex-direction: column; overflow: hidden;
+    background: rgba(20,20,24,var(--opAj, .85));
+    border: 1px solid rgba(255,255,255,.18); border-radius: 14px;
+    text-shadow: 0 0 3px #000, 0 1px 4px #000; /* legible con fondo 0 % */
   }
+  #ajustesCuerpo { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
   #ajustes label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-  #ajustes label span:first-child { flex: 0 0 92px; }
-  #ajustes label span:last-child { flex: 0 0 48px; text-align: right; font-variant-numeric: tabular-nums; color: #b5b5bd; }
+  #ajustes label span:first-child { flex: 0 0 96px; }
+  #ajustes label span:last-child { flex: 0 0 58px; text-align: right; font-variant-numeric: tabular-nums; color: #d5d5dd; }
   #ajustes input[type=range] { flex: 1 1 auto; min-width: 0; height: 44px; }
+  .fila-info { display: flex; justify-content: space-between; font-size: 14px; }
   .seg { display: flex; gap: 6px; }
   .seg button { flex: 1; }
 
@@ -135,20 +158,27 @@
 
   <!-- Cuadro del teleprompter -->
   <div id="caja">
-    <div id="asa">Arrastra para mover</div>
+    <div id="asa" class="asa">Arrastra para mover<span id="estimado" title="Tiempo estimado de desplazamiento">⏱ --:--</span></div>
     <textarea id="texto" spellcheck="false" placeholder="Escribe aquí tu guion…"></textarea>
+    <div id="redim" aria-label="Cambiar tamaño del cuadro"></div>
   </div>
 
   <div id="msgError" class="aviso oculto" role="alert"></div>
 
   <!-- Panel de ajustes -->
   <div id="ajustes" class="oculto">
-    <label><span>Opacidad fondo</span><input type="range" id="rngOp" min="0" max="100" step="1"><span id="valOp"></span></label>
-    <label><span>Tamaño letra</span><input type="range" id="rngFs" min="16" max="48" step="1"><span id="valFs"></span></label>
-    <label><span>Velocidad</span><input type="range" id="rngVel" min="0" max="150" step="1"><span id="valVel"></span></label>
-    <div class="seg" role="group" aria-label="Cámara">
-      <button id="btnSelfie" type="button">Selfie</button>
-      <button id="btnNormal" type="button">Normal</button>
+    <div id="asaAjustes" class="asa">Ajustes · arrastra para mover</div>
+    <div id="ajustesCuerpo">
+      <label><span>Opacidad panel</span><input type="range" id="rngOpAj" min="0" max="100" step="1"><span id="valOpAj"></span></label>
+      <label><span>Opacidad texto</span><input type="range" id="rngOp" min="0" max="100" step="1"><span id="valOp"></span></label>
+      <label><span>Tamaño letra</span><input type="range" id="rngFs" min="16" max="48" step="1"><span id="valFs"></span></label>
+      <label><span>Velocidad</span><input type="range" id="rngVel" min="0" max="150" step="1"><span id="valVel"></span></label>
+      <div class="fila-info"><span>Duración estimada</span><strong id="estimadoAj">--:--</strong></div>
+      <div class="seg" role="group" aria-label="Cámara">
+        <button id="btnSelfie" type="button">Selfie</button>
+        <button id="btnNormal" type="button">Normal</button>
+      </div>
+      <button id="btnEspejoRec" type="button" aria-pressed="false">Video grabado en espejo</button>
     </div>
   </div>
 
@@ -186,24 +216,27 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const el = {
-    preview: $('preview'), caja: $('caja'), asa: $('asa'), texto: $('texto'),
+    preview: $('preview'), caja: $('caja'), asa: $('asa'), texto: $('texto'), redim: $('redim'),
+    estimado: $('estimado'), estimadoAj: $('estimadoAj'),
     inicio: $('inicio'), btnActivar: $('btnActivar'), errInicio: $('errInicio'),
     avisoHttps: $('avisoHttps'), avisoMime: $('avisoMime'), msgError: $('msgError'),
     btnRec: $('btnRec'), estadoRec: $('estadoRec'), tiempo: $('tiempo'),
     btnVoltear: $('btnVoltear'), btnPlay: $('btnPlay'), btnTexto: $('btnTexto'),
-    btnAjustes: $('btnAjustes'), ajustes: $('ajustes'),
-    rngOp: $('rngOp'), rngFs: $('rngFs'), rngVel: $('rngVel'),
-    valOp: $('valOp'), valFs: $('valFs'), valVel: $('valVel'),
-    btnSelfie: $('btnSelfie'), btnNormal: $('btnNormal'),
+    btnAjustes: $('btnAjustes'), ajustes: $('ajustes'), asaAjustes: $('asaAjustes'),
+    rngOpAj: $('rngOpAj'), rngOp: $('rngOp'), rngFs: $('rngFs'), rngVel: $('rngVel'),
+    valOpAj: $('valOpAj'), valOp: $('valOp'), valFs: $('valFs'), valVel: $('valVel'),
+    btnSelfie: $('btnSelfie'), btnNormal: $('btnNormal'), btnEspejoRec: $('btnEspejoRec'),
     resultado: $('resultado'), videoFinal: $('videoFinal'),
     linkDescarga: $('linkDescarga'), btnOtra: $('btnOtra')
   };
+  const limitar = (v, min, max) => Math.max(min, Math.min(max, v));
 
   /* ===== Estado y persistencia (localStorage dentro de try/catch) ===== */
-  const KEY = 'teleprompter-selfie-v1';
+  const KEY = 'teleprompter-selfie-v2';
   const porDefecto = {
     texto: 'Escribe aquí tu guion. Toca ▶︎ para que el texto se desplace solo.\n\n',
-    op: 60, fs: 28, vel: 30, camara: 'user'
+    op: 60, opAj: 85, fs: 28, vel: 30, camara: 'user',
+    espejoRec: true, cajaW: null, cajaH: null
   };
   let cfg = Object.assign({}, porDefecto);
   try {
@@ -221,7 +254,9 @@
   let stream = null, recorder = null, chunks = [], mimeElegido = '';
   let inicioRec = 0, idTimer = null, urlVideo = null;
   let voltear = cfg.camara === 'user';
-  let desplazando = false, rafId = 0, ultimoT = 0, posY = 0;
+  let desplazando = false, rafId = 0, ultimoT = 0, posY = 0, ultimoSet = 0, tocando = false;
+  // Grabación en espejo (canvas)
+  let canvasActivo = false, rafCanvas = 0, streamCanvas = null;
 
   /* ===== Aviso HTTPS ===== */
   const esLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
@@ -243,31 +278,131 @@
     el.btnActivar.disabled = true;
   }
 
+  /* ===== Tiempo estimado de desplazamiento ===== */
+  function formatoTiempo(ms) {
+    const s = Math.floor(ms / 1000);
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+  function actualizarEstimado() {
+    // Distancia que recorre el scroll hasta el final / velocidad (px/s)
+    const max = Math.max(0, el.texto.scrollHeight - el.texto.clientHeight);
+    const actual = desplazando ? posY : el.texto.scrollTop;
+    const restante = Math.max(0, max - actual);
+    const sinVel = cfg.vel <= 0;
+    el.estimado.textContent = '⏱ ' + (sinVel ? '--:--' : formatoTiempo(Math.ceil(restante / cfg.vel) * 1000));
+    el.estimadoAj.textContent = sinVel ? '--:--' : formatoTiempo(Math.ceil(max / cfg.vel) * 1000);
+  }
+  setInterval(actualizarEstimado, 250);
+
   /* ===== Aplicar ajustes a la interfaz ===== */
   function aplicarUI() {
     el.caja.style.setProperty('--op', (cfg.op / 100).toFixed(2));
+    el.ajustes.style.setProperty('--opAj', (cfg.opAj / 100).toFixed(2));
     el.caja.style.setProperty('--fs', cfg.fs + 'px');
+    el.rngOpAj.value = cfg.opAj; el.valOpAj.textContent = cfg.opAj + ' %';
     el.rngOp.value = cfg.op; el.valOp.textContent = cfg.op + ' %';
     el.rngFs.value = cfg.fs; el.valFs.textContent = cfg.fs + ' px';
     el.rngVel.value = cfg.vel; el.valVel.textContent = cfg.vel + ' px/s';
     el.btnSelfie.setAttribute('aria-pressed', cfg.camara === 'user');
     el.btnNormal.setAttribute('aria-pressed', cfg.camara === 'environment');
+    el.btnEspejoRec.setAttribute('aria-pressed', !!cfg.espejoRec);
     aplicarVolteo();
+    actualizarEstimado();
   }
   function aplicarVolteo() {
-    // Solo la vista previa: el MediaRecorder graba el stream sin transformar
+    // Solo la vista previa: el video grabado depende de "Video grabado en espejo"
     el.preview.style.transform = voltear ? 'scaleX(-1)' : 'none';
     el.btnVoltear.setAttribute('aria-pressed', voltear);
   }
+
+  /* ===== Tamaño y posición de los paneles ===== */
+  function tamanoInicialCaja() {
+    const w = cfg.cajaW || Math.min(window.innerWidth - 24, 520);
+    const h = cfg.cajaH || Math.round(window.innerHeight * 0.36);
+    el.caja.style.width = limitar(w, 180, window.innerWidth) + 'px';
+    el.caja.style.height = limitar(h, 100, window.innerHeight) + 'px';
+  }
+  // Mantiene un panel dentro de la pantalla (al abrir, girar o cambiar tamaño)
+  function dentroDePantalla(caja) {
+    const r = caja.getBoundingClientRect();
+    caja.style.left = limitar(r.left, 0, Math.max(0, window.innerWidth - r.width)) + 'px';
+    caja.style.top = limitar(r.top, 0, Math.max(0, window.innerHeight - r.height)) + 'px';
+  }
+  window.addEventListener('resize', () => {
+    dentroDePantalla(el.caja);
+    if (!el.ajustes.classList.contains('oculto')) dentroDePantalla(el.ajustes);
+    actualizarEstimado();
+  });
+
+  // Arrastre con el dedo mediante pointer events (sirve para ambos paneles)
+  function hacerArrastrable(asa, caja) {
+    let a = null;
+    asa.addEventListener('pointerdown', ev => {
+      const r = caja.getBoundingClientRect();
+      a = { dx: ev.clientX - r.left, dy: ev.clientY - r.top };
+      asa.setPointerCapture(ev.pointerId);
+    });
+    asa.addEventListener('pointermove', ev => {
+      if (!a) return;
+      const r = caja.getBoundingClientRect();
+      caja.style.left = limitar(ev.clientX - a.dx, 0, Math.max(0, window.innerWidth - r.width)) + 'px';
+      caja.style.top = limitar(ev.clientY - a.dy, 0, Math.max(0, window.innerHeight - r.height)) + 'px';
+    });
+    const fin = () => { a = null; };
+    asa.addEventListener('pointerup', fin);
+    asa.addEventListener('pointercancel', fin);
+  }
+  hacerArrastrable(el.asa, el.caja);
+  hacerArrastrable(el.asaAjustes, el.ajustes);
+
+  // Cambiar el tamaño del cuadro con el tirador de la esquina
+  (() => {
+    let z = null;
+    el.redim.addEventListener('pointerdown', ev => {
+      const r = el.caja.getBoundingClientRect();
+      z = { x: ev.clientX, y: ev.clientY, w: r.width, h: r.height, l: r.left, t: r.top };
+      el.redim.setPointerCapture(ev.pointerId);
+    });
+    el.redim.addEventListener('pointermove', ev => {
+      if (!z) return;
+      const w = limitar(z.w + ev.clientX - z.x, 180, window.innerWidth - z.l);
+      const h = limitar(z.h + ev.clientY - z.y, 100, window.innerHeight - z.t);
+      el.caja.style.width = w + 'px';
+      el.caja.style.height = h + 'px';
+      cfg.cajaW = Math.round(w); cfg.cajaH = Math.round(h);
+      actualizarEstimado();
+    });
+    const fin = () => { if (z) guardar(); z = null; };
+    el.redim.addEventListener('pointerup', fin);
+    el.redim.addEventListener('pointercancel', fin);
+  })();
+
   el.texto.value = cfg.texto;
+  tamanoInicialCaja();
   aplicarUI();
 
-  el.texto.addEventListener('input', () => { cfg.texto = el.texto.value; guardar(); });
+  el.texto.addEventListener('input', () => { cfg.texto = el.texto.value; guardar(); actualizarEstimado(); });
+  el.rngOpAj.addEventListener('input', () => { cfg.opAj = +el.rngOpAj.value; aplicarUI(); guardar(); });
   el.rngOp.addEventListener('input', () => { cfg.op = +el.rngOp.value; aplicarUI(); guardar(); });
   el.rngFs.addEventListener('input', () => { cfg.fs = +el.rngFs.value; aplicarUI(); guardar(); });
   el.rngVel.addEventListener('input', () => { cfg.vel = +el.rngVel.value; aplicarUI(); guardar(); });
-  el.btnAjustes.addEventListener('click', () => el.ajustes.classList.toggle('oculto'));
+  el.btnAjustes.addEventListener('click', () => {
+    const abrir = el.ajustes.classList.contains('oculto');
+    el.ajustes.classList.toggle('oculto');
+    if (abrir) {
+      // Primera vez: colocarlo en la parte baja, encima de la barra
+      if (!el.ajustes.dataset.colocado) {
+        el.ajustes.style.top = Math.max(0, window.innerHeight - el.ajustes.offsetHeight - 110) + 'px';
+        el.ajustes.dataset.colocado = '1';
+      }
+      dentroDePantalla(el.ajustes);
+    }
+  });
   el.btnVoltear.addEventListener('click', () => { voltear = !voltear; aplicarVolteo(); });
+  el.btnEspejoRec.addEventListener('click', () => {
+    if (recorder && recorder.state === 'recording') return;
+    cfg.espejoRec = !cfg.espejoRec; aplicarUI(); guardar();
+  });
   el.btnTexto.addEventListener('click', () => {
     // Ocultar no detiene la grabación ni el desplazamiento
     const oculto = el.caja.classList.toggle('oculto');
@@ -302,7 +437,8 @@
     try {
       await abrirCamara(modo);
       cfg.camara = modo;
-      voltear = modo === 'user'; // selfie voltea por defecto
+      voltear = modo === 'user';        // selfie voltea la vista previa por defecto
+      cfg.espejoRec = modo === 'user';  // y graba en espejo por defecto (se puede cambiar)
       aplicarUI(); guardar();
     } catch (e) {
       cfg.camara = anterior;
@@ -335,28 +471,62 @@
   });
 
   /* ===== Grabación ===== */
-  function formatoTiempo(ms) {
-    const s = Math.floor(ms / 1000);
-    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  // Devuelve el stream a grabar: crudo, o un canvas volteado si se pidió espejo.
+  // El cuadro de texto nunca se dibuja en el canvas, así que no aparece en el video.
+  function prepararStreamGrabacion() {
+    if (!cfg.espejoRec) return stream;
+    if (!HTMLCanvasElement.prototype.captureStream) {
+      mostrarError('Este navegador no permite grabar en espejo; se grabará sin espejo.');
+      return stream;
+    }
+    const w = el.preview.videoWidth || 1280, h = el.preview.videoHeight || 720;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    canvasActivo = true;
+    const dibujar = () => {
+      if (!canvasActivo) return;
+      ctx.save();
+      ctx.translate(w, 0); ctx.scale(-1, 1);
+      ctx.drawImage(el.preview, 0, 0, w, h);
+      ctx.restore();
+      if (el.preview.requestVideoFrameCallback) el.preview.requestVideoFrameCallback(dibujar);
+      else rafCanvas = requestAnimationFrame(dibujar);
+    };
+    dibujar();
+    streamCanvas = canvas.captureStream(30);
+    stream.getAudioTracks().forEach(t => streamCanvas.addTrack(t));
+    return streamCanvas;
   }
+  function limpiarCanvas() {
+    canvasActivo = false;
+    cancelAnimationFrame(rafCanvas);
+    if (streamCanvas) {
+      // Solo se paran las pistas de video del canvas; el audio es el de la cámara
+      streamCanvas.getVideoTracks().forEach(t => t.stop());
+      streamCanvas = null;
+    }
+  }
+
   function iniciarGrabacion() {
     if (!stream) return;
     chunks = [];
     try {
-      recorder = new MediaRecorder(stream, { mimeType: mimeElegido });
+      recorder = new MediaRecorder(prepararStreamGrabacion(), { mimeType: mimeElegido });
     } catch (e) {
+      limpiarCanvas();
       mostrarError('No se pudo iniciar la grabación: ' + e.message);
       return;
     }
     recorder.ondataavailable = ev => { if (ev.data && ev.data.size) chunks.push(ev.data); };
-    recorder.onstop = mostrarResultado;
+    recorder.onstop = () => { limpiarCanvas(); mostrarResultado(); };
     recorder.start(1000);
     inicioRec = Date.now();
     el.tiempo.textContent = '00:00';
     el.estadoRec.classList.add('activo');
     el.btnRec.classList.add('grabando');
     el.btnRec.setAttribute('aria-label', 'Detener');
-    el.btnSelfie.disabled = el.btnNormal.disabled = true;
+    el.btnSelfie.disabled = el.btnNormal.disabled = el.btnEspejoRec.disabled = true;
     idTimer = setInterval(() => { el.tiempo.textContent = formatoTiempo(Date.now() - inicioRec); }, 250);
   }
   function detenerGrabacion() {
@@ -364,7 +534,7 @@
     el.estadoRec.classList.remove('activo');
     el.btnRec.classList.remove('grabando');
     el.btnRec.setAttribute('aria-label', 'Grabar');
-    el.btnSelfie.disabled = el.btnNormal.disabled = false;
+    el.btnSelfie.disabled = el.btnNormal.disabled = el.btnEspejoRec.disabled = false;
     pausarDesplazamiento();
     if (recorder && recorder.state !== 'inactive') recorder.stop();
   }
@@ -400,13 +570,20 @@
     const dt = ultimoT ? (t - ultimoT) / 1000 : 0;
     ultimoT = t;
     const max = el.texto.scrollHeight - el.texto.clientHeight;
-    posY = Math.min(max, posY + cfg.vel * dt); // acumulamos decimales: scrollTop redondea
-    el.texto.scrollTop = posY;
-    if (posY >= max) { pausarDesplazamiento(); return; }
+    if (tocando || Math.abs(el.texto.scrollTop - ultimoSet) > 1.5) {
+      // El usuario mueve el texto con el dedo (o hay inercia): seguir desde ahí sin pausar
+      posY = el.texto.scrollTop;
+      ultimoSet = posY;
+    } else {
+      posY = Math.min(max, posY + cfg.vel * dt); // acumulamos decimales: scrollTop redondea
+      el.texto.scrollTop = posY;
+      ultimoSet = el.texto.scrollTop;
+      if (posY >= max - 0.5) { pausarDesplazamiento(); return; }
+    }
     rafId = requestAnimationFrame(paso);
   }
   function iniciarDesplazamiento() {
-    posY = el.texto.scrollTop; ultimoT = 0; desplazando = true;
+    posY = el.texto.scrollTop; ultimoSet = posY; ultimoT = 0; desplazando = true;
     el.btnPlay.textContent = '❚❚';
     rafId = requestAnimationFrame(paso);
   }
@@ -415,27 +592,10 @@
     el.btnPlay.textContent = '▶︎';
   }
   el.btnPlay.addEventListener('click', () => desplazando ? pausarDesplazamiento() : iniciarDesplazamiento());
-  // Si el usuario desplaza a mano, retomamos desde esa posición
-  el.texto.addEventListener('touchstart', () => { if (desplazando) pausarDesplazamiento(); }, { passive: true });
-
-  /* ===== Arrastrar el cuadro con el dedo ===== */
-  let arrastre = null;
-  el.asa.addEventListener('pointerdown', ev => {
-    const r = el.caja.getBoundingClientRect();
-    arrastre = { dx: ev.clientX - r.left, dy: ev.clientY - r.top };
-    el.asa.setPointerCapture(ev.pointerId);
-  });
-  el.asa.addEventListener('pointermove', ev => {
-    if (!arrastre) return;
-    const r = el.caja.getBoundingClientRect();
-    const x = Math.max(0, Math.min(window.innerWidth - r.width, ev.clientX - arrastre.dx));
-    const y = Math.max(0, Math.min(window.innerHeight - r.height, ev.clientY - arrastre.dy));
-    el.caja.style.left = x + 'px';
-    el.caja.style.top = y + 'px';
-  });
-  const finArrastre = () => { arrastre = null; };
-  el.asa.addEventListener('pointerup', finArrastre);
-  el.asa.addEventListener('pointercancel', finArrastre);
+  el.texto.addEventListener('touchstart', () => { tocando = true; }, { passive: true });
+  const finToque = () => { tocando = false; };
+  el.texto.addEventListener('touchend', finToque, { passive: true });
+  el.texto.addEventListener('touchcancel', finToque, { passive: true });
 
   // Liberar la cámara al salir de la página
   window.addEventListener('pagehide', detenerStream);
